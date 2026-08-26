@@ -1,99 +1,19 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Wikignose — Admin</title>
-  <link rel="stylesheet" href="../app/styles.css">
-  <style>
-    .admin-shell{width:min(920px,calc(100% - 32px));margin:0 auto;padding:48px 0 72px}.admin-card{background:#fff;border:1px solid #dfddd6;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.035);margin-bottom:20px}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.notice{margin-top:18px;padding:14px;border-radius:12px;background:#f0eee8;line-height:1.5}.back-link{text-decoration:none;color:#35342f;border:1px solid #cfcdc5;border-radius:999px;padding:9px 14px}.small{font-size:.88rem;color:#68665f}.optional{font-weight:400;color:#77736c}.queue-item{padding:14px;border:1px solid #dfddd6;border-radius:12px;background:#fff;margin-top:10px}.hidden{display:none!important}.progress{margin-top:12px}.ok{background:#edf5ed}.error{background:#f8eaea}button:disabled,input:disabled{opacity:.55;cursor:not-allowed}@media(max-width:700px){.admin-grid{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  <header class="topbar"><div class="brand">Wikignose · Admin</div><a class="back-link" href="../app/">Retour à la recherche</a></header>
-  <main class="admin-shell">
-    <section class="hero"><h1>Bibliothèque privée</h1><p>Connecte-toi puis envoie un ou plusieurs PDF. Les fichiers sont stockés dans le bucket privé Supabase de Wikignose, pas dans le dépôt GitHub public.</p></section>
-
-    <section class="admin-card" id="authCard">
-      <h2>Connexion Admin</h2>
-      <div id="signedOut">
-        <div class="admin-grid">
-          <div><label for="email">E-mail</label><input id="email" type="email" autocomplete="email"></div>
-          <div><label for="password">Mot de passe</label><input id="password" type="password" autocomplete="current-password" minlength="8"></div>
-        </div>
-        <div class="admin-actions"><button id="loginButton" class="primary-button" type="button">Se connecter</button><button id="signupButton" class="ghost-button" type="button">Créer mon compte</button></div>
-      </div>
-      <div id="signedIn" class="hidden"><p>Connecté : <strong id="userEmail"></strong></p><div class="admin-actions"><button id="logoutButton" class="ghost-button" type="button">Se déconnecter</button></div></div>
-      <div id="authStatus" class="notice">Connexion requise. Seuls les e-mails inscrits dans la liste Admin Wikignose peuvent envoyer ou lire les PDF.</div>
-    </section>
-
-    <section class="admin-card" id="uploadCard">
-      <h2>Ajouter des ouvrages</h2>
-      <label for="pdfFiles">PDF</label><input id="pdfFiles" type="file" accept="application/pdf,.pdf" multiple disabled>
-      <div id="fileSummary" class="small" style="margin-top:8px">Aucun fichier sélectionné.</div>
-      <p class="small">Les champs suivants sont facultatifs. S'ils restent vides, l'indexation IA devra les déduire du document.</p>
-      <div class="admin-grid" style="margin-top:14px">
-        <div><label for="title">Titre <span class="optional">(facultatif)</span></label><input id="title" type="text" placeholder="Détection automatique" disabled></div>
-        <div><label for="course">Cours / volume <span class="optional">(facultatif)</span></label><input id="course" type="text" placeholder="Détection automatique" disabled></div>
-        <div><label for="school">École <span class="optional">(facultatif)</span></label><input id="school" type="text" placeholder="Détection automatique" disabled></div>
-        <div><label for="current">Courant <span class="optional">(facultatif)</span></label><input id="current" type="text" placeholder="Détection automatique" disabled></div>
-      </div>
-      <div style="margin-top:14px"><label for="masters">Maîtres / auteurs <span class="optional">(facultatif)</span></label><input id="masters" type="text" placeholder="Séparer plusieurs noms par des virgules" disabled></div>
-      <div class="admin-actions"><button id="uploadButton" class="primary-button" type="button" disabled>Envoyer les PDF à indexer</button></div>
-      <div id="uploadStatus" class="notice">Après connexion autorisée, tu pourras sélectionner plusieurs PDF et les envoyer réellement vers le stockage privé.</div>
-      <div id="progress" class="progress small"></div>
-    </section>
-
-    <section class="admin-card">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2>Ouvrages en attente</h2><button id="refreshButton" class="ghost-button" type="button" disabled>Actualiser</button></div>
-      <div id="queueList" class="small">Connecte-toi pour voir la file.</div>
-    </section>
-  </main>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL='https://jwtawyeuyvqjikjvfhri.supabase.co';
-const SUPABASE_KEY='sb_publishable_NI2EftRV2KkG-aO9M0MZdA_8p-1GsJR';
-const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);
-let authorized=false;
-const inputs=['pdfFiles','title','course','school','current','masters','uploadButton','refreshButton'];
-function setEnabled(on){inputs.forEach(id=>$(id).disabled=!on)}
-function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
-function safeName(name){return name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(-120)||'document.pdf'}
-async function checkAuth(){
-  const {data:{session}}=await client.auth.getSession();
-  if(!session){authorized=false;$('signedOut').classList.remove('hidden');$('signedIn').classList.add('hidden');setEnabled(false);$('authStatus').className='notice';$('authStatus').textContent='Connexion requise. Seuls les e-mails inscrits dans la liste Admin Wikignose peuvent envoyer ou lire les PDF.';$('queueList').textContent='Connecte-toi pour voir la file.';return}
-  $('signedOut').classList.add('hidden');$('signedIn').classList.remove('hidden');$('userEmail').textContent=session.user.email||'';
-  const {data,error}=await client.rpc('is_wikignose_admin');
-  authorized=!error&&data===true;setEnabled(authorized);
-  if(authorized){$('authStatus').className='notice ok';$('authStatus').textContent='Compte autorisé. Les PDF envoyés ici restent privés dans Supabase.';await loadQueue()}
-  else{$('authStatus').className='notice error';$('authStatus').textContent='Compte connecté mais non autorisé pour Wikignose. Cet e-mail doit d’abord être ajouté à la liste Admin.';$('queueList').textContent='Accès non autorisé.'}
-}
-$('loginButton').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authStatus').textContent='Renseigne ton e-mail et ton mot de passe.';return}const {error}=await client.auth.signInWithPassword({email,password});$('authStatus').textContent=error?error.message:'Connexion réussie.';await checkAuth()};
-$('signupButton').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<8){$('authStatus').textContent='Renseigne un e-mail et un mot de passe d’au moins 8 caractères.';return}const {error}=await client.auth.signUp({email,password});$('authStatus').textContent=error?error.message:'Compte créé. Si Supabase t’envoie un e-mail de confirmation, confirme-le puis reviens te connecter ici.'};
-$('logoutButton').onclick=async()=>{await client.auth.signOut();await checkAuth()};
-$('pdfFiles').onchange=()=>{const f=[...$('pdfFiles').files];$('fileSummary').textContent=f.length?`${f.length} PDF sélectionné${f.length>1?'s':''} — ${f.map(x=>x.name).join(' · ')}`:'Aucun fichier sélectionné.'};
-$('uploadButton').onclick=async()=>{
-  if(!authorized)return;const files=[...$('pdfFiles').files];if(!files.length){$('uploadStatus').textContent='Choisis au moins un PDF.';return}
-  const bad=files.find(f=>f.type!=='application/pdf'&&!f.name.toLowerCase().endsWith('.pdf'));if(bad){$('uploadStatus').textContent=`${bad.name} n’est pas reconnu comme PDF.`;return}
-  const hints={title_hint:$('title').value.trim()||null,course_hint:$('course').value.trim()||null,school_hint:$('school').value.trim()||null,current_hint:$('current').value.trim()||null,masters_hint:$('masters').value.split(',').map(x=>x.trim()).filter(Boolean)};
-  $('uploadButton').disabled=true;let done=0;
-  for(const file of files){
-    $('progress').textContent=`Envoi ${done+1}/${files.length} : ${file.name}`;
-    const path=`pending/${new Date().toISOString().replace(/[:.]/g,'-')}-${crypto.randomUUID()}-${safeName(file.name)}`;
-    const up=await client.storage.from('wikignose-pdfs').upload(path,file,{contentType:'application/pdf',upsert:false});
-    if(up.error){$('uploadStatus').className='notice error';$('uploadStatus').textContent=`Échec pour ${file.name} : ${up.error.message}`;continue}
-    const meta=await client.from('pending_documents').insert({storage_path:path,original_filename:file.name,file_size:file.size,...hints,masters_hint:hints.masters_hint.length?hints.masters_hint:null});
-    if(meta.error){await client.storage.from('wikignose-pdfs').remove([path]);$('uploadStatus').className='notice error';$('uploadStatus').textContent=`Fichier non enregistré dans la file : ${meta.error.message}`;continue}
-    done++;
-  }
-  $('progress').textContent='';$('uploadStatus').className='notice '+(done===files.length?'ok':'');$('uploadStatus').textContent=`${done} fichier${done>1?'s':''} envoyé${done>1?'s':''} dans le stockage privé sur ${files.length}. Ils sont maintenant disponibles pour la prochaine indexation.`;$('pdfFiles').value='';$('fileSummary').textContent='Aucun fichier sélectionné.';$('uploadButton').disabled=!authorized;await loadQueue();
-};
-async function loadQueue(){if(!authorized)return;const {data,error}=await client.from('pending_documents').select('id,original_filename,file_size,status,uploaded_at,title_hint,school_hint,course_hint').order('uploaded_at',{ascending:false}).limit(100);if(error){$('queueList').textContent=error.message;return}$('queueList').innerHTML=data.length?data.map(x=>`<div class="queue-item"><strong>${esc(x.title_hint||x.original_filename)}</strong><div>${esc(x.original_filename)} · ${((x.file_size||0)/1024/1024).toFixed(2)} Mo</div><div>${esc(x.school_hint||'Métadonnées à détecter')}${x.course_hint?' · '+esc(x.course_hint):''}</div><div>État : ${esc(x.status)} · ${new Date(x.uploaded_at).toLocaleString('fr-FR')}</div></div>`).join(''):'Aucun ouvrage en attente.'}
-$('refreshButton').onclick=loadQueue;
-client.auth.onAuthStateChange(()=>setTimeout(checkAuth,0));
-checkAuth();
-</script>
-</body>
-</html>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wikignose — Admin</title><link rel="stylesheet" href="../app/styles.css">
+  <style>.admin-shell{width:min(920px,calc(100% - 32px));margin:0 auto;padding:48px 0 72px}.admin-card{background:#fff;border:1px solid #dfddd6;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.035);margin-bottom:20px}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.notice{margin-top:18px;padding:14px;border-radius:12px;background:#f0eee8;line-height:1.5}.back-link{text-decoration:none;color:#35342f;border:1px solid #cfcdc5;border-radius:999px;padding:9px 14px}.small{font-size:.88rem;color:#68665f}.optional{font-weight:400;color:#77736c}.queue-item{padding:14px;border:1px solid #dfddd6;border-radius:12px;background:#fff;margin-top:10px}.hidden{display:none!important}.progress{margin-top:12px}.ok{background:#edf5ed}.error{background:#f8eaea}.password-wrap{position:relative}.password-wrap input{padding-right:52px;width:100%;box-sizing:border-box}.eye-button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;font-size:1.25rem;padding:7px 9px;border-radius:8px}button:disabled,input:disabled{opacity:.55;cursor:not-allowed}@media(max-width:700px){.admin-grid{grid-template-columns:1fr}}</style>
+</head><body>
+<header class="topbar"><div class="brand">Wikignose · Admin</div><a class="back-link" href="../app/">Retour à la recherche</a></header>
+<main class="admin-shell"><section class="hero"><h1>Bibliothèque privée</h1><p>Connecte-toi puis envoie un ou plusieurs PDF. Les fichiers sont stockés dans le bucket privé Supabase de Wikignose, pas dans le dépôt GitHub public.</p></section>
+<section class="admin-card" id="authCard"><h2>Connexion Admin</h2><div id="signedOut"><div class="admin-grid"><div><label for="email">E-mail</label><input id="email" type="email" autocomplete="email"></div><div><label for="password">Mot de passe</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" class="eye-button" type="button" aria-label="Afficher le mot de passe" title="Afficher le mot de passe">👁</button></div></div></div><div class="admin-actions"><button id="loginButton" class="primary-button" type="button">Se connecter</button><button id="signupButton" class="ghost-button" type="button">Créer mon compte</button></div></div><div id="signedIn" class="hidden"><p>Connecté : <strong id="userEmail"></strong></p><div class="admin-actions"><button id="logoutButton" class="ghost-button" type="button">Se déconnecter</button></div></div><div id="authStatus" class="notice">Connexion requise. Seuls les e-mails inscrits dans la liste Admin Wikignose peuvent envoyer ou lire les PDF.</div></section>
+<section class="admin-card" id="uploadCard"><h2>Ajouter des ouvrages</h2><label for="pdfFiles">PDF</label><input id="pdfFiles" type="file" accept="application/pdf,.pdf" multiple disabled><div id="fileSummary" class="small" style="margin-top:8px">Aucun fichier sélectionné.</div><p class="small">Les champs suivants sont facultatifs. S'ils restent vides, l'indexation IA devra les déduire du document.</p><div class="admin-grid" style="margin-top:14px"><div><label for="title">Titre <span class="optional">(facultatif)</span></label><input id="title" type="text" placeholder="Détection automatique" disabled></div><div><label for="course">Cours / volume <span class="optional">(facultatif)</span></label><input id="course" type="text" placeholder="Détection automatique" disabled></div><div><label for="school">École <span class="optional">(facultatif)</span></label><input id="school" type="text" placeholder="Détection automatique" disabled></div><div><label for="current">Courant <span class="optional">(facultatif)</span></label><input id="current" type="text" placeholder="Détection automatique" disabled></div></div><div style="margin-top:14px"><label for="masters">Maîtres / auteurs <span class="optional">(facultatif)</span></label><input id="masters" type="text" placeholder="Séparer plusieurs noms par des virgules" disabled></div><div class="admin-actions"><button id="uploadButton" class="primary-button" type="button" disabled>Envoyer les PDF à indexer</button></div><div id="uploadStatus" class="notice">Après connexion autorisée, tu pourras sélectionner plusieurs PDF et les envoyer réellement vers le stockage privé.</div><div id="progress" class="progress small"></div></section>
+<section class="admin-card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2>Ouvrages en attente</h2><button id="refreshButton" class="ghost-button" type="button" disabled>Actualiser</button></div><div id="queueList" class="small">Connecte-toi pour voir la file.</div></section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+const SUPABASE_URL='https://jwtawyeuyvqjikjvfhri.supabase.co',SUPABASE_KEY='sb_publishable_NI2EftRV2KkG-aO9M0MZdA_8p-1GsJR';const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),$=id=>document.getElementById(id);let authorized=false;const inputs=['pdfFiles','title','course','school','current','masters','uploadButton','refreshButton'];function setEnabled(on){inputs.forEach(id=>$(id).disabled=!on)}function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}function safeName(name){return name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(-120)||'document.pdf'}
+$('togglePassword').onclick=()=>{const p=$('password'),show=p.type==='password';p.type=show?'text':'password';$('togglePassword').textContent=show?'🙈':'👁';$('togglePassword').setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe')};
+async function checkAuth(){const {data:{session}}=await client.auth.getSession();if(!session){authorized=false;$('signedOut').classList.remove('hidden');$('signedIn').classList.add('hidden');setEnabled(false);$('authStatus').className='notice';$('authStatus').textContent='Connexion requise. Seuls les e-mails inscrits dans la liste Admin Wikignose peuvent envoyer ou lire les PDF.';$('queueList').textContent='Connecte-toi pour voir la file.';return}$('signedOut').classList.add('hidden');$('signedIn').classList.remove('hidden');$('userEmail').textContent=session.user.email||'';const {data,error}=await client.rpc('is_wikignose_admin');authorized=!error&&data===true;setEnabled(authorized);if(authorized){$('authStatus').className='notice ok';$('authStatus').textContent='Compte autorisé. Les PDF envoyés ici restent privés dans Supabase.';await loadQueue()}else{$('authStatus').className='notice error';$('authStatus').textContent='Compte connecté mais non autorisé pour Wikignose.';$('queueList').textContent='Accès non autorisé.'}}
+$('loginButton').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authStatus').textContent='Renseigne ton e-mail et ton mot de passe.';return}const {error}=await client.auth.signInWithPassword({email,password});$('authStatus').textContent=error?error.message:'Connexion réussie.';await checkAuth()};$('signupButton').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<8){$('authStatus').textContent='Renseigne un e-mail et un mot de passe d’au moins 8 caractères.';return}const {error}=await client.auth.signUp({email,password});$('authStatus').textContent=error?error.message:'Compte créé. Si Supabase t’envoie un e-mail de confirmation, confirme-le puis reviens te connecter ici.'};$('logoutButton').onclick=async()=>{await client.auth.signOut();await checkAuth()};$('pdfFiles').onchange=()=>{const f=[...$('pdfFiles').files];$('fileSummary').textContent=f.length?`${f.length} PDF sélectionné${f.length>1?'s':''} — ${f.map(x=>x.name).join(' · ')}`:'Aucun fichier sélectionné.'};
+$('uploadButton').onclick=async()=>{if(!authorized)return;const files=[...$('pdfFiles').files];if(!files.length){$('uploadStatus').textContent='Choisis au moins un PDF.';return}const bad=files.find(f=>f.type!=='application/pdf'&&!f.name.toLowerCase().endsWith('.pdf'));if(bad){$('uploadStatus').textContent=`${bad.name} n’est pas reconnu comme PDF.`;return}const hints={title_hint:$('title').value.trim()||null,course_hint:$('course').value.trim()||null,school_hint:$('school').value.trim()||null,current_hint:$('current').value.trim()||null,masters_hint:$('masters').value.split(',').map(x=>x.trim()).filter(Boolean)};$('uploadButton').disabled=true;let done=0;for(const file of files){$('progress').textContent=`Envoi ${done+1}/${files.length} : ${file.name}`;const path=`pending/${new Date().toISOString().replace(/[:.]/g,'-')}-${crypto.randomUUID()}-${safeName(file.name)}`;const up=await client.storage.from('wikignose-pdfs').upload(path,file,{contentType:'application/pdf',upsert:false});if(up.error){$('uploadStatus').className='notice error';$('uploadStatus').textContent=`Échec pour ${file.name} : ${up.error.message}`;continue}const meta=await client.from('pending_documents').insert({storage_path:path,original_filename:file.name,file_size:file.size,...hints,masters_hint:hints.masters_hint.length?hints.masters_hint:null});if(meta.error){await client.storage.from('wikignose-pdfs').remove([path]);$('uploadStatus').className='notice error';$('uploadStatus').textContent=`Fichier non enregistré dans la file : ${meta.error.message}`;continue}done++}$('progress').textContent='';$('uploadStatus').className='notice '+(done===files.length?'ok':'');$('uploadStatus').textContent=`${done} fichier${done>1?'s':''} envoyé${done>1?'s':''} dans le stockage privé sur ${files.length}.`;$('pdfFiles').value='';$('fileSummary').textContent='Aucun fichier sélectionné.';$('uploadButton').disabled=!authorized;await loadQueue()};async function loadQueue(){if(!authorized)return;const {data,error}=await client.from('pending_documents').select('id,original_filename,file_size,status,uploaded_at,title_hint,school_hint,course_hint').order('uploaded_at',{ascending:false}).limit(100);if(error){$('queueList').textContent=error.message;return}$('queueList').innerHTML=data.length?data.map(x=>`<div class="queue-item"><strong>${esc(x.title_hint||x.original_filename)}</strong><div>${esc(x.original_filename)} · ${((x.file_size||0)/1024/1024).toFixed(2)} Mo</div><div>${esc(x.school_hint||'Métadonnées à détecter')}${x.course_hint?' · '+esc(x.course_hint):''}</div><div>État : ${esc(x.status)} · ${new Date(x.uploaded_at).toLocaleString('fr-FR')}</div></div>`).join(''):'Aucun ouvrage en attente.'}$('refreshButton').onclick=loadQueue;client.auth.onAuthStateChange(()=>setTimeout(checkAuth,0));checkAuth();
+</script></body></html>
