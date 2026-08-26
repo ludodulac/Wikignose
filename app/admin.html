@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wikignose — Administration</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand brand-link" href="./">Wikignose</a>
+    <a class="ghost-button nav-link" href="./">Retour à la recherche</a>
+  </header>
+
+  <main class="shell admin-shell">
+    <section class="hero compact-hero">
+      <p class="eyebrow">Administration</p>
+      <h1>Ajouter un ouvrage</h1>
+      <p>Prépare un nouveau PDF pour son indexation. L’index lexical et l’index thématique sont deux couches distinctes.</p>
+    </section>
+
+    <section class="admin-card">
+      <div class="admin-grid">
+        <div>
+          <label for="pdfFile">PDF</label>
+          <input id="pdfFile" type="file" accept="application/pdf,.pdf">
+        </div>
+        <div>
+          <label for="bookTitle">Titre</label>
+          <input id="bookTitle" type="text" placeholder="Titre de l’ouvrage">
+        </div>
+        <div>
+          <label for="school">École / collection</label>
+          <input id="school" type="text" placeholder="Ex. École du cœur">
+        </div>
+        <div>
+          <label for="course">Cours / volume</label>
+          <input id="course" type="text" placeholder="Ex. Cours 3">
+        </div>
+        <div>
+          <label for="current">Courant</label>
+          <input id="current" type="text" placeholder="Ex. Tradition essénienne">
+        </div>
+        <div>
+          <label for="masters">Maître(s) / auteur(s)</label>
+          <input id="masters" type="text" placeholder="Séparer par des virgules">
+        </div>
+      </div>
+
+      <div class="indexing-options">
+        <div class="index-layer">
+          <strong>1. Occurrences</strong>
+          <p>Index mécanique : mots, expressions exactes, pages et fréquence. Une fois calculé, il n’a pas besoin d’être refait lorsque d’autres livres arrivent.</p>
+        </div>
+        <div class="index-layer">
+          <strong>2. Pertinence thématique</strong>
+          <p>Index sémantique : thèmes, sous-thèmes et importance. Après l’ajout d’ouvrages, une conversation IA peut réévaluer la pertinence de toute la bibliothèque.</p>
+        </div>
+      </div>
+
+      <button id="prepareIndex" class="primary-button" type="button">Indexer / préparer l’ouvrage</button>
+      <p id="adminStatus" class="admin-status muted" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-card queue-card">
+      <div class="panel-heading">
+        <div>
+          <h2>File d’indexation locale</h2>
+          <p>Ces fiches restent dans ce navigateur jusqu’à leur intégration au dépôt par une conversation IA.</p>
+        </div>
+        <button id="clearQueue" class="ghost-button" type="button">Vider</button>
+      </div>
+      <div id="adminQueue" class="admin-queue"></div>
+    </section>
+
+    <section class="admin-note">
+      <h2>Étape IA</h2>
+      <p>Après avoir préparé un ouvrage ici, ouvre une conversation reliée au dépôt Wikignose, joins le PDF et demande : <strong>« indexe ce nouvel ouvrage et réévalue la pertinence thématique de la bibliothèque si nécessaire »</strong>.</p>
+      <p>Le site public reste utilisable sans IA ; l’IA n’intervient que pour enrichir ou recalibrer la couche thématique.</p>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
