@@ -11,6 +11,22 @@ Wikignose sépare strictement deux étapes :
 
 L'application ne doit pas dépendre d'un service d'IA pour répondre aux recherches ordinaires.
 
+## Ajout de plusieurs ouvrages et métadonnées automatiques
+
+L'espace Admin peut préparer **plusieurs PDF en une seule opération**.
+
+Les champs titre, cours/volume, école, courant et maîtres/auteurs sont **facultatifs**. Lorsqu'ils sont laissés vides, la conversation IA chargée de l'indexation doit les déduire elle-même à partir du document : couverture, pages de titre, mentions éditoriales, table des matières, en-têtes, contenu et structure générale.
+
+Les informations fournies manuellement dans l'Admin sont des **indices ou corrections prioritaires**, mais ne dispensent pas de vérifier le PDF. Ne jamais inventer une métadonnée qui n'est pas identifiable ; utiliser une valeur neutre ou signaler l'incertitude si nécessaire.
+
+Lors d'un lot de plusieurs PDF :
+
+- traiter chaque ouvrage comme une entité distincte ;
+- détecter ses propres métadonnées et sa propre structure ;
+- éviter les doublons à partir de l'empreinte SHA-256 quand elle est disponible ;
+- indexer lexicalement uniquement les nouveaux ouvrages ;
+- après ajout du lot, réévaluer la pertinence thématique globale si les nouveaux contenus peuvent modifier le classement relatif des résultats.
+
 ## Deux couches de recherche obligatoires
 
 ### Occurrences
@@ -43,9 +59,9 @@ Donc, à chaque fois qu'un nouveau PDF est indexé :
 
 ## Espace Admin
 
-Le lien **Admin** du site mène à `app/admin.html`.
+Le lien **Admin** du site mène à `/admin/`.
 
-Cet écran sert à préparer un nouvel ouvrage pour indexation (PDF, titre, école, cours, courant, maîtres/auteurs, empreinte SHA-256 et fiche JSON).
+Cet écran sert à préparer un ou plusieurs ouvrages pour indexation (PDF, métadonnées facultatives, empreinte SHA-256 et fiche locale).
 
 Comme GitHub Pages est statique, **ne jamais mettre un token GitHub, une clé API ou un secret dans le frontend public**. La file Admin locale n’écrit pas directement dans le dépôt : l’intégration réelle est faite ensuite par une conversation autorisée reliée à GitHub.
 
@@ -95,10 +111,11 @@ Les PDF originaux doivent rester intacts. Une future fonction d'extraction crée
 
 Vérifier systématiquement :
 
-- que le nouveau document est présent dans l'index ;
+- que chaque nouveau document du lot est présent dans l'index ;
+- que ses métadonnées ont été identifiées ou signalées comme incertaines ;
 - que ses pages et chapitres sont correctement délimités ;
 - que son index d’occurrences est ajouté sans recalcul inutile des anciens ouvrages ;
-- que la pertinence thématique globale a été réévaluée si le nouveau volume peut modifier le classement ;
+- que la pertinence thématique globale a été réévaluée si les nouveaux volumes peuvent modifier le classement ;
 - que les nouveaux thèmes apparaissent dans le Répertoire des thèmes ;
 - que les filtres de maître/courant sont renseignés ;
 - que les termes d'exclusion fonctionnent ;
