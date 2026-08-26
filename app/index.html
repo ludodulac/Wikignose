@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wikignose</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Wikignose</div>
+    <button id="themesToggle" class="ghost-button" type="button" aria-expanded="false">Répertoire des thèmes</button>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <h1>Que recherchez-vous ?</h1>
+      <p>Retrouvez les ouvrages, chapitres et pages les plus pertinents dans les enseignements indexés.</p>
+    </section>
+
+    <section class="search-panel" aria-label="Recherche">
+      <label for="query">Recherche</label>
+      <input id="query" type="search" placeholder="Ex. préparation intérieure avant de commencer une œuvre">
+
+      <div class="secondary-row">
+        <div>
+          <label for="exclude">Exclure</label>
+          <input id="exclude" type="text" placeholder="Ex. Steiner, prophétie">
+        </div>
+        <div>
+          <label for="masterFilter">Maître / courant</label>
+          <select id="masterFilter">
+            <option value="">Tous</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="searchButton" class="primary-button" type="button">Rechercher</button>
+    </section>
+
+    <section id="themesPanel" class="themes-panel" hidden>
+      <div class="panel-heading">
+        <div>
+          <h2>Répertoire des thèmes</h2>
+          <p>Ce répertoire est généré automatiquement à partir de tous les documents indexés.</p>
+        </div>
+        <button id="closeThemes" class="ghost-button" type="button">Fermer</button>
+      </div>
+      <input id="themeFilter" type="search" placeholder="Filtrer les thèmes…">
+      <div id="themeDirectory" class="theme-directory"></div>
+    </section>
+
+    <section class="results-section">
+      <div class="results-heading">
+        <h2>Résultats</h2>
+        <span id="resultCount" class="muted"></span>
+      </div>
+      <div id="results" class="results">
+        <div class="empty-state">Saisissez un thème ou une question pour commencer.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../data/index.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
