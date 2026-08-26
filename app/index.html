@@ -8,17 +8,26 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Wikignose</div>
-    <button id="themesToggle" class="ghost-button" type="button" aria-expanded="false">Répertoire des thèmes</button>
+    <a class="brand brand-link" href="./">Wikignose</a>
+    <div class="topbar-actions">
+      <button id="themesToggle" class="ghost-button" type="button" aria-expanded="false">Répertoire des thèmes</button>
+      <a class="ghost-button nav-link" href="admin.html">Admin</a>
+    </div>
   </header>
 
   <main class="shell">
     <section class="hero">
       <h1>Que recherchez-vous ?</h1>
-      <p>Retrouvez les ouvrages, chapitres et pages les plus pertinents dans les enseignements indexés.</p>
+      <p>Retrouvez les ouvrages, chapitres et pages dans les enseignements indexés.</p>
     </section>
 
     <section class="search-panel" aria-label="Recherche">
+      <div class="search-mode" role="group" aria-label="Mode de recherche">
+        <button id="modeThemes" class="mode-button active" type="button" data-mode="themes">Pertinence du thème</button>
+        <button id="modeOccurrences" class="mode-button" type="button" data-mode="occurrences">Occurrences de mots / termes</button>
+      </div>
+      <p id="modeHelp" class="mode-help">Classe les résultats selon l’importance du thème dans les chapitres et passages déjà analysés.</p>
+
       <label for="query">Recherche</label>
       <input id="query" type="search" placeholder="Ex. préparation intérieure avant de commencer une œuvre">
 
