@@ -1,49 +1,27 @@
 # Wikignose
 
-> **Projet intégré à La Forêt Enchantée depuis le 4 septembre 2026.**  
-> Le dépôt actif pour les évolutions de l’application est désormais `ludodulac/La-for-t-enchant-e`. Ce dépôt Wikignose reste conservé comme archive historique, documentation de référence et point de restauration de l’ancienne version autonome. Ne pas développer une nouvelle version active ici sans décision explicite de séparation des projets.
+Wikignose est un moteur de recherche documentaire statique pour un corpus de PDF analysés et indexés.
 
-Wikignose est un moteur de recherche local pour une bibliothèque de PDF appartenant à un même ensemble d'enseignements.
+## Fonctionnement
 
-L'intelligence artificielle intervient au moment de **l'indexation** d'un nouveau PDF : elle identifie la structure du document, les chapitres, les thèmes explicites et implicites, les maîtres/courants concernés et les pages pertinentes. Ensuite, l'application de consultation peut fonctionner **sans connexion à une IA** en interrogeant uniquement l'index local.
+Le dépôt est autonome : **aucun Supabase, aucune base distante et aucun back-office**.
 
-## Objectif
+1. Déposer les nouveaux PDF dans `pdfs/`.
+2. Analyser les PDF et enrichir `data/wikignose-index.js` avec les chapitres, pages, thèmes, aliases, maîtres/courants et, lorsque disponible, l’index lexical.
+3. La page `index.html` consulte uniquement cet index local.
 
-- rechercher un thème dans tous les ouvrages indexés ;
-- classer les résultats par pertinence et importance ;
-- indiquer le PDF, le chapitre et les pages concernés ;
-- filtrer par école, courant ou maître ;
-- exclure des mots ou des noms de la recherche ;
-- afficher un **Répertoire des thèmes** uniquement lorsque l'utilisateur clique sur l'onglet prévu à cet effet ;
-- permettre à terme l'extraction d'un ou plusieurs chapitres en nouveaux PDF imprimables/téléchargeables.
+La recherche ordinaire ne lance aucune IA distante. L’IA intervient seulement lors du travail d’analyse/indexation des PDF ajoutés au dépôt.
 
-## Prototype historique
+## Structure
 
-Le prototype autonome reste dans `app/` et son ancien index dans `data/index.js`.
+- `index.html` — interface de recherche ;
+- `css/wikignose.css` — présentation ;
+- `js/wikignose.js` — moteur de recherche local ;
+- `data/wikignose-index.js` — index documentaire ;
+- `pdfs/` — PDF sources à analyser.
 
-L’implémentation active migrée se trouve maintenant dans La Forêt Enchantée :
+## Règles d’indexation
 
-- `wikignose.html` ;
-- `js/wikignose.js` ;
-- `data/wikignose-index.js` ;
-- `js/admin-wikignose.js` ;
-- `docs/WIKIGNOSE.md`.
+Ne jamais remplacer ou réécrire silencieusement les entrées déjà indexées lors de l’ajout d’un PDF. Un nouveau document s’ajoute au corpus. Le mode **Occurrences exactes** ne doit utiliser que du texte ou des termes lexicaux réellement extraits, jamais les résumés ou thèmes comme faux substitut.
 
-## Mémoire technique
-
-Les documents historiques restent importants pour comprendre les décisions antérieures :
-
-1. `AGENTS.md`
-2. `AI_START_HERE.md`
-3. `docs/INDEXATION.md`
-4. `docs/ADMIN_INDEXATION.md`
-
-Les règles durables utiles ont été consolidées dans `docs/WIKIGNOSE.md` du dépôt La Forêt Enchantée.
-
-## PDF
-
-Les PDF originaux n’étaient pas présents dans ce dépôt GitHub au moment de la fusion. Leurs noms historiques restent référencés dans l’index migré. Les futurs PDF doivent être stockés dans le stockage privé du projet Supabase commun de La Forêt Enchantée et rattachés à l’index sans modifier les originaux.
-
-## Backend historique
-
-Le schéma Supabase historique a été sauvegardé dans `supabase/archive/2026-09-04_legacy_backend.sql` avant la mise en pause du projet Supabase Wikignose. Au moment de la bascule, il contenait 0 document en attente et 0 fichier PDF stocké.
+Quand un PDF du dossier `pdfs/` est indexé, renseigner son champ `file` avec un chemin relatif comme `pdfs/nom-du-fichier.pdf` afin que le résultat puisse ouvrir directement la bonne page du document.
